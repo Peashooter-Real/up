@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>FarmUP — Community Rooms</title>
+<meta name="description" content="พื้นที่สื่อสารและพูดคุยสำหรับเกษตรกรและผู้บริโภค"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { headline: ['Manrope','sans-serif'] },
+      colors: {
+        primary: '#1a6b2e', 'primary-light': '#2d8a47', 'primary-dark': '#0f4a1f',
+        secondary: '#e8a020', surface: '#f5f0e8', danger: '#dc2626', success: '#16a34a'
+      }
+    }
+  }
+}
+</script>
+<style>
+*{box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#f5f0e8;height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
+.nav-item{display:flex;flex-direction:column;align-items:center;padding:8px;cursor:pointer;text-decoration:none;color:#6b7280;transition:color 0.2s;}
+.nav-item:hover,.nav-item.active{color:#1a6b2e;}
+.tab-btn{padding:10px 20px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;color:#6b7280;transition:all 0.2s;white-space:nowrap;border:1px solid transparent;}
+.tab-btn.active{background:#1a6b2e;color:#fff;border-color:#1a6b2e;}
+.msg-bubble{border-radius:18px;max-width:85%;word-break:break-word;animation:fadeIn 0.3s ease;}
+.msg-me{background:linear-gradient(135deg,#2d8a47,#1a6b2e);color:#fff;border-bottom-right-radius:4px;margin-left:auto;}
+.msg-other{background:#fff;color:#1f2937;border-bottom-left-radius:4px;border:1px solid #e5e7eb;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.room-card{background:#fff;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);cursor:pointer;transition:all 0.2s;border:2px solid transparent;}
+.room-card:active{transform:scale(0.98);}
+.chat-container{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;}
+</style>
+</head>
+<body class="safe-area-inset-bottom">
+
+<!-- Header -->
+<header class="bg-white/90 backdrop-blur-xl px-4 py-4 flex items-center gap-3 border-b border-gray-100 flex-shrink-0">
+  <button onclick="history.back()" class="p-2 rounded-xl bg-gray-100"><span class="material-symbols-outlined text-gray-600">arrow_back</span></button>
+  <div class="flex-1">
+    <h1 class="font-headline font-black text-xl text-gray-900 leading-none">กลุ่มชุมชน</h1>
+    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Chat & Rooms</p>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="bg-white px-4 py-3 flex gap-2 border-b border-gray-100 flex-shrink-0">
+  <button id="tab-btn-rooms" class="tab-btn active flex-1" onclick="switchTab(this,'tab-rooms')">ห้องแลกเปลี่ยน</button>
+  <button id="tab-btn-chat" class="tab-btn flex-1" onclick="switchTab(this,'tab-chat')">แชทกลุ่ม</button>
+</div>
+
+<main class="flex-1 overflow-hidden flex flex-col">
+  <!-- Tab: Rooms -->
+  <div id="tab-rooms" class="tab-panel flex-1 overflow-y-auto px-4 py-6 space-y-4">
+    <div class="bg-gradient-to-br from-primary to-primary-dark rounded-[32px] p-6 text-white shadow-xl shadow-primary/20 relative overflow-hidden mb-6">
+       <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+       <h3 class="font-headline font-black text-lg mb-1">เลือกหัวข้อที่คุณสนใจ</h3>
+       <p class="text-white/60 text-xs font-medium">เชื่อมต่อกับเพื่อนเกษตรกรตัวจริงในห้องต่างๆ</p>
+    </div>
+    <div id="rooms-list" class="space-y-3 pb-24"></div>
+  </div>
+
+  <!-- Tab: Chat -->
+  <div id="tab-chat" class="tab-panel hidden flex-1 flex flex-col overflow-hidden">
+    <!-- Chat Header -->
+    <div class="bg-white/80 px-4 py-3 border-b border-gray-100 flex items-center gap-3 flex-shrink-0 backdrop-blur-sm">
+      <div id="chat-header-icon" class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-2xl">storefront</span></div>
+      <div class="flex-1 min-w-0">
+        <p id="chat-header-title" class="font-bold text-sm text-gray-900 truncate">ตลาดนัดแบ่งปัน</p>
+        <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div><span class="text-[9px] text-success font-black uppercase tracking-tight">Active Now</span></div>
+      </div>
+    </div>
+    <!-- Messages AREA - This is the scrollable part -->
+    <div class="chat-container" id="chat-messages">
+       <div class="text-center text-[10px] text-gray-400 font-bold uppercase my-4">เริ่มบทสนทนาในห้องนี้</div>
+    </div>
+    <!-- INPUT AREA - Fixed at bottom of chat panel -->
+    <div class="bg-white border-t border-gray-100 px-4 py-3 pb-safe flex-shrink-0 mb-20">
+      <div class="flex gap-2 items-center bg-surface rounded-2xl p-1 pr-2">
+        <input id="msg-input" type="text" placeholder="พิมพ์ข้อความ..." 
+          class="flex-1 px-4 py-3 bg-transparent text-sm focus:outline-none transition-all"
+          onkeydown="if(event.key==='Enter')sendMsg();"/>
+        <button onclick="sendMsg()" class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-xl">send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-white px-6 py-3 rounded-full shadow-xl z-[300] font-bold text-sm"></div>
+
+<!-- Bottom Nav (Standardized) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-white/80 backdrop-blur-xl border-t border-gray-100 shadow-xl h-20 flex items-center px-2">
+  <a href="farmup_home.html" class="nav-item flex-1"><span class="material-symbols-outlined text-2xl">home</span><span class="text-[10px] font-bold mt-0.5">หน้าหลัก</span></a>
+  <a href="farmup_explore.html" class="nav-item flex-1"><span class="material-symbols-outlined text-2xl">search</span><span class="text-[10px] font-bold mt-0.5">สำรวจ</span></a>
+  <a href="farmup_explore.html" class="flex-1 flex flex-col items-center justify-center -mt-8">
+    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary-light to-primary shadow-xl shadow-primary/40 flex items-center justify-center">
+      <span class="material-symbols-outlined text-white text-2xl" style="font-variation-settings:'FILL' 1;">eco</span>
+    </div>
+    <span class="text-[10px] font-bold text-primary mt-1 font-black uppercase">จอง</span>
+  </a>
+  <a href="farmup_market.html" class="nav-item flex-1"><span class="material-symbols-outlined text-2xl">storefront</span><span class="text-[10px] font-bold mt-0.5">ตลาด</span></a>
+  <a href="farmup_community.html" class="nav-item active flex-1"><span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">forum</span><span class="text-[10px] font-bold mt-0.5">ชุมชน</span></a>
+</nav>
+
+<script>
+var user = JSON.parse(localStorage.getItem('farmup_user') || '{"name":"คุณสมใจ","avatar":"person","role":"consumer"}');
+var currentRoom = 'market';
+var rooms = [
+  { id:'market', emoji:'storefront', name:'ตลาดนัดแบ่งปัน', members:'892', sub:'กลุ่มแลกเปลี่ยนและซื้อขายโดยตรง' },
+  { id:'advice', emoji:'psychology', name:'ปรึกษาผู้เชี่ยวชาญ', members:'456', sub:'ถามคำถามเรื่องการเพาะปลูกแบบอินทรีย์' },
+  { id:'general', emoji:'language', name:'เรื่องทั่วไป', members:'1,245', sub:'ไลฟ์สไตล์เกษตรและประสบการณ์ทั่วไป' }
+];
+
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.className = 'tab-btn flex-1');
+  btn.className = 'tab-btn active flex-1';
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if(id === 'tab-chat') {
+     setTimeout(scrollChat, 100);
+  }
+}
+
+function renderRooms() {
+  const list = document.getElementById('rooms-list');
+  list.innerHTML = '';
+  rooms.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'room-card ' + (currentRoom === r.id ? 'active' : '');
+    div.innerHTML = `
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-2xl">${r.emoji}</span></div>
+        <div class="flex-1">
+          <h3 class="font-bold text-sm text-gray-900">${r.name}</h3>
+          <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tight">${r.sub}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-primary font-black">${r.members}</p>
+          <p class="text-[8px] text-gray-400 font-bold">MEMBERS</p>
+        </div>
+      </div>
+    `;
+    div.onclick = () => {
+       currentRoom = r.id;
+       document.getElementById('chat-header-title').textContent = r.name;
+       document.getElementById('chat-header-icon').innerHTML = `<span class="material-symbols-outlined text-2xl">${r.emoji}</span>`;
+       switchTab(document.getElementById('tab-btn-chat'), 'tab-chat');
+       renderRooms();
+    };
+    list.appendChild(div);
+  });
+}
+
+function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const msgBody = document.createElement('div');
+  msgBody.className = 'flex flex-col items-end my-1 animate-in slide-in-from-right-4 duration-300';
+  msgBody.innerHTML = `
+    <div class="msg-bubble msg-me px-4 py-2.5 text-sm font-medium shadow-sm">${text}</div>
+    <p class="text-[8px] text-gray-400 mt-1 mr-1">${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</p>
+  `;
+  document.getElementById('chat-messages').appendChild(msgBody);
+  input.value = '';
+  scrollChat();
+}
+
+function scrollChat() {
+  const c = document.getElementById('chat-messages');
+  c.scrollTop = c.scrollHeight;
+}
+
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', renderRooms);
+</script>
+</body>
+</html>
