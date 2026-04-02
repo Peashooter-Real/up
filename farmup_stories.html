@@ -119,6 +119,28 @@ body{font-family:'Inter',sans-serif;background:#f5f0e8;min-height:100vh;}
 var user = JSON.parse(localStorage.getItem('farmup_user') || '{"name":"คุณสมใจ","avatar":"person","role":"consumer"}');
 var posts = JSON.parse(localStorage.getItem('farmup_community_posts') || '[]');
 
+if (posts.length === 0) {
+  posts = [
+    {
+      id: 1001,
+      user: 'พี่เขียว ฟาร์มเขียวสด',
+      text: 'วันนี้เริ่มเก็บเกี่ยวตะไคร้อินทรีย์แล้วครับ กลิ่นหอมฟุ้งไปทั้งฟาร์มเลย ใครจองไว้เตรียมรับได้เลย!',
+      img: 'lemongrass.png',
+      likes: 42,
+      time: '1 ชั่วโมงที่แล้ว'
+    },
+    {
+      id: 1002,
+      user: 'ลุงทอง ฟาร์มทุ่งทอง',
+      text: 'ข้าวหอมมะลิปีนี้รวงสวยมากครับ เมล็ดใส ขาว ขัดสีออกมาแล้วคุณภาพดีเยี่ยมแน่นอน',
+      img: 'jasmine_rice_raw_1775138641910.png',
+      likes: 38,
+      time: '3 ชั่วโมงที่แล้ว'
+    }
+  ];
+  localStorage.setItem('farmup_community_posts', JSON.stringify(posts));
+}
+
 function renderFeed() {
   const list = document.getElementById('story-feed-list');
   list.innerHTML = '';
