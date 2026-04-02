@@ -198,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return R * c;
   }
 
+
   function renderMarketList(userLat, userLng) {
     var list = document.getElementById('market-list');
     list.innerHTML = '';
@@ -211,20 +212,50 @@ document.addEventListener('DOMContentLoaded', function() {
     markets.forEach(function(m) {
       L.marker([m.lat, m.lng], { icon: greenIcon }).addTo(map).bindPopup("<b>" + m.name + "</b>");
       
-      var distText = m.dist ? `ระยะทาง ${m.dist.toFixed(1)} กม.` : `ระยะทางใกล้เคียง`;
+      var distText = m.dist ? `ระยะทาง ${m.dist < 1 ? (m.dist*1000).toFixed(0) + ' ม.' : m.dist.toFixed(1) + ' กม.'}` : `ระยะทางใกล้เคียง`;
       
       var div = document.createElement('div');
       div.className = 'bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex gap-4 items-center animate-in fade-in slide-in-from-bottom-2 duration-500';
       div.innerHTML = `
-        <div class="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center text-primary text-3xl"><span class="material-symbols-outlined">storefront</span></div>
+        <div class="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center text-primary text-3xl"><span class="material-symbols-outlined">${m.icon || 'storefront'}</span></div>
         <div class="flex-1">
            <p class="font-black text-sm text-gray-900">${m.name}</p>
-           <p class="text-[10px] text-gray-500 font-bold uppercase">${distText} • เปิดถึง ${m.closedAt}</p>
+           <p class="text-[10px] text-gray-500 font-bold uppercase">${distText} • เปิดถึง ${m.closedAt || '20:00'}</p>
         </div>
         <button class="bg-primary/10 text-primary text-[10px] font-black px-4 py-2 rounded-xl">เข้าแผง →</button>
       `;
       list.appendChild(div);
     });
+  }
+
+  function fetchRealMarkets(lat, lng) {
+    const radius = 5000; // 5km
+    const query = `[out:json][timeout:25];(nwr["shop"~"marketplace|supermarket"](around:${radius},${lat},${lng});nwr["amenity"="marketplace"](around:${radius},${lat},${lng}););out center;`;
+    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data.elements && data.elements.length > 0) {
+          const newMarkets = data.elements.map(el => {
+            const name = el.tags.name || 'ตลาดใกล้คุณ';
+            return {
+              name: name,
+              lat: el.lat || el.center.lat,
+              lng: el.lon || el.center.lon,
+              closedAt: el.tags['opening_hours'] || '20:00',
+              icon: 'storefront'
+            };
+          });
+          
+          markets = newMarkets;
+          renderMarketList(lat, lng);
+        }
+      })
+      .catch(err => {
+        console.error("Overpass Error:", err);
+        renderMarketList(lat, lng); // Fallback to mock
+      });
   }
 
   // Initial render
@@ -236,11 +267,14 @@ document.addEventListener('DOMContentLoaded', function() {
       var lat = position.coords.latitude;
       var lng = position.coords.longitude;
       
+      map.removeLayer(userIcon); // cleanup
       L.marker([lat, lng], { icon: userIcon }).addTo(map).bindPopup("<b>ตำแหน่งของคุณ</b>");
-      map.setView([lat, lng], 13);
-      renderMarketList(lat, lng);
+      map.setView([lat, lng], 14);
+      
+      fetchRealMarkets(lat, lng);
     }, function(err) {
       console.warn("Geolocation Error:", err.message);
+      renderMarketList(); 
     });
   }
 });
