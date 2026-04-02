@@ -214,6 +214,12 @@ document.addEventListener('DOMContentLoaded', function() {
       
       var distText = m.dist ? `ระยะทาง ${m.dist < 1 ? (m.dist*1000).toFixed(0) + ' ม.' : m.dist.toFixed(1) + ' กม.'}` : `ระยะทางใกล้เคียง`;
       
+      // Google Maps Directions Link
+      var navUrl = `https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}&travelmode=driving`;
+      if (userLat && userLng) {
+        navUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${m.lat},${m.lng}&travelmode=driving`;
+      }
+
       var div = document.createElement('div');
       div.className = 'bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex gap-4 items-center animate-in fade-in slide-in-from-bottom-2 duration-500';
       div.innerHTML = `
@@ -222,7 +228,9 @@ document.addEventListener('DOMContentLoaded', function() {
            <p class="font-black text-sm text-gray-900">${m.name}</p>
            <p class="text-[10px] text-gray-500 font-bold uppercase">${distText} • เปิดถึง ${m.closedAt || '20:00'}</p>
         </div>
-        <button class="bg-primary/10 text-primary text-[10px] font-black px-4 py-2 rounded-xl">เข้าแผง →</button>
+        <a href="${navUrl}" target="_blank" class="bg-primary text-white text-[10px] font-black px-4 py-2 rounded-xl flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">directions</span> ไปแผง
+        </a>
       `;
       list.appendChild(div);
     });
